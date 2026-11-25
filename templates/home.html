@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% set page = 'home' %}
+{% block title %}Briefing{% endblock %}
+
+{% macro lane(g, kind, tag) %}
+<section class="lane" data-kind="{{ kind }}">
+  <header class="lhead">
+    <span class="fav">{{ (g.label[:1] or '?')|upper }}</span>
+    <span class="name"><b>{{ g.label }}</b><span>{{ tag }}</span></span>
+    <span class="count">{{ g['items']|length }}</span>
+  </header>
+  <div class="lbody">
+    {% for i in g['items'] %}
+    <article class="story" data-title="{{ i.title }}" data-meta="{{ g.label }}{% if i.published %}, {{ i.published }}{% endif %}" data-link="{{ i.link if i.link|href != '#' else '' }}" data-image="{{ i.image|mediaurl }}" data-video="{{ i.video_id or '' }}" data-id="{{ i.id }}" data-q="{{ (i.title ~ ' ' ~ i.excerpt ~ ' ' ~ g.label)|lower }}">
+      {% if i.image %}<button type="button" class="thumb open" tabindex="-1" aria-hidden="true"><img loading="lazy" alt="" src="{{ i.image|mediaurl }}">{% if i.video_id %}<i class="ph ph-play-circle"></i>{% endif %}</button>{% endif %}
+      <button type="button" class="open">{{ i.title }}</button>
+      <div class="meta2">{{ i.published or g.label }}</div>
+      <p class="ex">{{ i.excerpt }}</p>
+      <div class="full" hidden>{{ i.text[:8000] }}</div>
+      <div class="imgs" hidden>{% for u in i|more_images %}<span data-src="{{ u }}"></span>{% endfor %}</div>
+    </article>
+    {% else %}<div class="none">No new articles on this day.</div>{% endfor %}
+  </div>
+</section>
+{% endmacro %}
+
+{% block content %}
+{% if not day %}
+<h1 class="title rise">Briefing</h1>
+<div class="empty rise" style="--i:1; margin-top:32px">
+  <h2>No articles yet</h2>
+  <p>Add a few websites or topics, then run your first scrape.</p>
+  <a class="btn" href="{{ url_for('add') }}"><i class="ph ph-plus-circle"></i> Add new scraper</a>
+</div>
+{% else %}
+<div class="head rise">
+  <div>
+    <h1 class="title">{{ 'Today' if day == today else (day|longdate).split(' ')[0] }}</h1>
+    <p class="sub">{{ day|longdate }}</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n" data-count="{{ items|length }}">{{ items|length }}</div><div class="l">articles</div></div>
+    <div class="stat"><div class="n" data-count="{{ reporting }}">{{ reporting }}</div><div class="l">of {{ n_sources }} sources</div></div>
+    <div class="stat"><div class="n" data-count="{{ n_search + n_manual }}">{{ n_search + n_manual }}</div><div class="l">topics, posts, videos</div></div>
+  </div>
+</div>
+
+<nav class="strip rise" style="--i:1" aria-label="Last 14 days">
+  {% for a in activity %}
+  {% set inner %}
+    <span class="wd">{{ a.wd }}</span><span class="dn">{{ a.d }}</span>
+    <span class="bar"><i style="height: {{ [(a.n / peak * 100)|round|int, 6]|max if a.n else 8 }}%; --i: {{ loop.index0 }}"></i></span>
+    <span class="ct">{{ a.n }}</span>
+  {% endset %}
+  {% if a.n %}<a class="day {{ 'on' if a.day == day }}" href="{{ url_for('home', day=a.day) }}" title="{{ a.day }}: {{ a.n }} articles" {{ 'aria-current=date' if a.day == day }}>{{ inner }}</a>
+  {% else %}<div class="day empty" title="{{ a.day }}: nothing collected">{{ inner }}</div>{% endif %}
+  {% endfor %}
+</nav>
+
+{% if leads %}
+<section class="spot rise" id="spot" style="--i:2" aria-roledescription="carousel" aria-label="Top stories">
+  <div class="slides">
+    {% for i in leads %}
+    <article class="slide {{ 'on' if loop.first }} {{ 'hasimg' if i.image }}" data-title="{{ i.title }}" data-meta="{{ i|srclabel }}{% if i.published %}, {{ i.published }}{% endif %}" data-link="{{ i.link if i.link|href != '#' else '' }}" data-image="{{ i.image|mediaurl }}" data-video="{{ i.video_id or '' }}" data-id="{{ i.id }}" aria-hidden="{{ 'false' if loop.first else 'true' }}">
+      <div class="stext">
+        <div class="src">{{ i|srclabel }}{% if i.published %}, {{ i.published }}{% endif %}</div>
+        <h2><button type="button" class="open" {{ 'tabindex=-1' if not loop.first }}>{{ i.title }}</button></h2>
+        <p>{{ i.excerpt }}</p>
+      </div>
+      {% if i.image %}<button type="button" class="simg open" tabindex="-1" aria-hidden="true"><img alt="" src="{{ i.image|mediaurl }}">{% if i.video_id %}<i class="ph ph-play-circle"></i>{% endif %}</button>{% endif %}
+      <div class="full" hidden>{{ i.text[:8000] }}</div>
+      <div class="imgs" hidden>{% for u in i|more_images %}<span data-src="{{ u }}"></span>{% endfor %}</div>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="spotbar">
+    <button class="btn" id="spotread" type="button">Read the story <i class="ph ph-book-open-text"></i></button>
+    {% if leads|length > 1 %}
+    <div class="dots" role="group" aria-label="Choose story">
+      {% for i in leads %}<button type="button" class="dot {{ 'on' if loop.first }}" aria-label="Show story {{ loop.index }}"></button>{% endfor %}
+    </div>
+    <button class="iconbtn" id="spotprev" type="button" aria-label="Previous story"><i class="ph ph-caret-left"></i></button>
+    <button class="iconbtn" id="spotnext" type="button" aria-label="Next story"><i class="ph ph-caret-right"></i></button>
+    <button class="iconbtn" id="spotpause" type="button" aria-label="Pause rotation" aria-pressed="false"><i class="ph ph-pause"></i></button>
+    <div class="spotprog" aria-hidden="true"><i></i></div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<div class="boardbar rise" style="--i:3">
+  <h2>The board</h2>
+  <div class="chips">
+    <button class="chip on" data-kind="all">All</button>
+    <button class="chip" data-kind="priority">Websites</button>
+    <button class="chip" data-kind="search">Topics</button>
+    {% if vid_groups %}<button class="chip" data-kind="video">Videos</button>{% endif %}
+    {% if man_groups %}<button class="chip" data-kind="manual">Pasted</button>{% endif %}
+  </div>
+  <button class="btn ghost sm" id="opensearch" type="button"><i class="ph ph-magnifying-glass"></i> Search <span class="kbd">/</span></button>
+  <div class="nav2">
+    <button class="iconbtn" id="lprev" type="button" aria-label="Scroll board left"><i class="ph ph-caret-left"></i></button>
+    <button class="iconbtn" id="lnext" type="button" aria-label="Scroll board right"><i class="ph ph-caret-right"></i></button>
+  </div>
+  <a class="btn ghost sm" href="{{ url_for('export', day=day, fmt='csv') }}"><i class="ph ph-download-simple"></i> CSV</a>
+  <a class="btn ghost sm" href="{{ url_for('export', day=day, fmt='json') }}">JSON</a>
+</div>
+
+<div class="board rise" id="board" style="--i:4">
+  {% for g in pri_groups %}{{ lane(g, 'priority', 'website') }}{% endfor %}
+  {% for g in search_groups %}{{ lane(g, 'search', 'topic search') }}{% endfor %}
+  {% for g in vid_groups %}{{ lane(g, 'video', 'YouTube') }}{% endfor %}
+  {% for g in man_groups %}{{ lane(g, 'manual', 'pasted by the team') }}{% endfor %}
+  {% if not pri_groups and not search_groups and not man_groups and not vid_groups %}<div class="none">Nothing on the board yet.</div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block overlays %}
+{% if day %}
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dtitle" aria-hidden="true">
+  <div class="dhead">
+    <h2 id="dtitle"></h2>
+    <button class="iconbtn" id="dclose" type="button" aria-label="Close reader"><i class="ph ph-x"></i></button>
+  </div>
+  <div class="dbody" id="dbody"><div class="dmedia" id="dmedia"></div><div class="mono" id="dmeta"></div><div class="full" id="dtext"></div><section class="trans hide" id="dtrans" aria-label="Transcript"><h3>Transcript</h3><div class="tstatus" id="tstatus"></div><div id="tbody"></div></section><div class="gallery" id="dgallery"></div></div>
+  <div class="dfoot"><a class="btn" id="dopen" href="#" target="_blank" rel="noopener noreferrer">Open original <i class="ph ph-arrow-up-right"></i></a></div>
+</aside>
+<div class="palette" id="palette" role="dialog" aria-label="Search stories">
+  <input id="pq" type="text" placeholder="Search all stories" aria-label="Search all stories" autocomplete="off">
+  <ul id="plist"></ul>
+</div>
+{% endif %}
+{% endblock %}

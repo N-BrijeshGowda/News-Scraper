@@ -1,0 +1,15 @@
+flask
+sqlalchemy
+requests
+beautifulsoup4
+lxml
+trafilatura
+feedparser
+ddgs
+apscheduler
+youtube-transcript-api
+imageio-ffmpeg
+yt-dlp
+numpy
+anthropic
+gunicorn; sys_platform != "win32"

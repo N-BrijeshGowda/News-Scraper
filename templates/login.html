@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="lagoon">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in | News Scraper</title>
+<script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem('ns-theme2');if(!t){t=matchMedia('(prefers-color-scheme: light)').matches?'blush':'lagoon'}document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/big-shoulders-display@5.3.0/index.css" integrity="sha384-IuhvvyZbm1NgB7VMtIPPdoMeKUxntuEZuZGRD7dUbkAHb6lXpyYolkFZcY1iew1j" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/hanken-grotesk@5.3.0/index.css" integrity="sha384-LK4Cy9y5L8rLh+rP5R7d6jLROKH3Hsdtv2AKNiN1JSQukzAXF+m6fdYfuALHo5Bn" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/spline-sans-mono@5.3.0/index.css" integrity="sha384-neVGtQJFr6cUmsllIij9J0fzkozA0TbcPxWyT2U3TVt10ESi1gmUW7Mrccb69OVB" crossorigin="anonymous">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+<main class="login">
+  <div class="giant" aria-hidden="true">News Scraper</div>
+  <div class="themes" role="group" aria-label="Colour theme">
+    <button data-t="lagoon" title="Lagoon" aria-label="Lagoon theme"></button>
+    <button data-t="blush" title="Blush" aria-label="Blush theme"></button>
+    <button data-t="highlighter" title="Highlighter" aria-label="Highlighter theme"></button>
+  </div>
+  <form class="slip rise" method="post" autocomplete="on">
+    <a class="brand" href="#"><b>N</b>News Scraper</a>
+    <h1>Sign in</h1>
+    <p class="lede">The day's news, collected for your team. Use the shared login.</p>
+    {% if error %}<div class="flash error" role="alert">{{ error }}</div>{% endif %}
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <div class="field"><label for="u">Username</label><input id="u" type="text" name="username" autocomplete="username" autofocus required></div>
+    <div class="field"><label for="p">Password</label><input id="p" type="password" name="password" autocomplete="current-password" required></div>
+    <button class="btn full" style="margin-top:8px">Sign in</button>
+    <div class="steps"><span class="pill">collect</span><span class="pill">search</span><span class="pill">brief</span></div>
+  </form>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Secrets and live data: never upload or commit these
+.env
+.news-scraper.env*
+credentials.json
+secret.key
+username*.txt
+news.db
+media/
+uploads/
+__pycache__/
+.venv/
+*.pyc

@@ -1,0 +1,23 @@
+# systemd service: keeps the app running, starts it on boot, restarts it if it crashes.
+# Replace SITEUSER and the path with your CloudPanel site user and folder (see DEPLOY.md).
+[Unit]
+Description=News Scraper
+After=network.target
+
+[Service]
+User=SITEUSER
+Group=SITEUSER
+WorkingDirectory=/home/SITEUSER/htdocs/YOUR-DOMAIN
+ExecStart=/bin/bash /home/SITEUSER/htdocs/YOUR-DOMAIN/start.sh
+Restart=always
+RestartSec=5
+# Gives long video jobs time to finish when the service is restarted
+TimeoutStopSec=60
+# Memory guard: slows the app down above 1 GB and restarts it if it ever passes 1.5 GB,
+# so it can never starve the rest of the server. Video jobs run at low priority.
+MemoryHigh=1G
+MemoryMax=1500M
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

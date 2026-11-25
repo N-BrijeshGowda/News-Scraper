@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% set page = 'add' %}
+{% block title %}Add new scraper{% endblock %}
+{% block content %}
+<div class="head rise">
+  <div>
+    <h1 class="title">Add new scraper</h1>
+    <p class="sub">Pick what you want to watch. Websites and topics are scraped every day.</p>
+  </div>
+</div>
+
+<div class="picks rise" style="--i:1" role="group" aria-label="What to add">
+  <button type="button" class="pick on" data-pane="pane-urls" aria-pressed="true"><i class="ph ph-globe"></i><b>Websites</b><span>Read first, every morning.</span></button>
+  <button type="button" class="pick" data-pane="pane-topics" aria-pressed="false"><i class="ph ph-hash"></i><b>Topics</b><span>Searched across the web.</span></button>
+  <button type="button" class="pick" data-pane="pane-post" aria-pressed="false"><i class="ph ph-clipboard-text"></i><b>Paste a post</b><span>For LinkedIn and others.</span></button>
+  <button type="button" class="pick" data-pane="pane-video" aria-pressed="false"><i class="ph ph-youtube-logo"></i><b>YouTube</b><span>Paste a video link.</span></button>
+</div>
+
+<div class="composer rise" style="--i:2">
+  <div class="panel compose">
+    <form class="pane" id="pane-urls" method="post" action="{{ url_for('add_sources') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="urls">Website addresses</label>
+        <textarea id="urls" name="urls" placeholder="https://www.bbc.com/news&#10;https://techcrunch.com&#10;reuters.com"></textarea>
+        <div class="parsed" id="urls-parsed" aria-live="polite"></div>
+      </div>
+      <div class="field">
+        <label for="file">Or upload a .txt or .csv file</label>
+        <input id="file" type="file" name="file" accept=".txt,.csv">
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" name="priority" checked> Priority source</label>
+        <label class="check"><input type="checkbox" name="run_now"> Scrape right away</label>
+      </div>
+      <button class="btn"><i class="ph ph-plus-circle"></i> Add websites</button>
+    </form>
+
+    <form class="pane hide" id="pane-topics" method="post" action="{{ url_for('add_topics') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="topics">Topics to search for</label>
+        <textarea id="topics" name="topics" placeholder="solar energy&#10;electric vehicle policy&#10;AI regulation"></textarea>
+        <div class="parsed" id="topics-parsed" aria-live="polite"></div>
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" name="run_now"> Scrape right away</label>
+      </div>
+      <button class="btn"><i class="ph ph-plus-circle"></i> Add topics</button>
+    </form>
+
+    <form class="pane hide" id="pane-post" method="post" action="{{ url_for('add_post') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="text">Post text</label>
+        <textarea id="text" name="text" required minlength="20" maxlength="20000" placeholder="Paste the full text of the post here"></textarea>
+      </div>
+      <div class="field">
+        <label for="author">Who posted it</label>
+        <input id="author" type="text" name="author" maxlength="120" placeholder="LinkedIn (or a person or company name)">
+      </div>
+      <div class="field">
+        <label for="link">Link to the post (optional)</label>
+        <input id="link" type="text" name="link" placeholder="https://www.linkedin.com/posts/...">
+      </div>
+      <div class="field">
+        <label for="published">Date posted (optional)</label>
+        <input id="published" type="text" name="published" maxlength="32" placeholder="2026-11-18">
+      </div>
+      <button class="btn"><i class="ph ph-clipboard-text"></i> Save to today's briefing</button>
+    </form>
+
+    <form class="pane hide" id="pane-video" method="post" action="{{ url_for('add_videos') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="vurls">YouTube video links</label>
+        <textarea id="vurls" name="urls" required placeholder="https://www.youtube.com/watch?v=...&#10;https://youtu.be/..."></textarea>
+        <p class="mute small" style="margin:8px 0 0">Up to 5 links at once. Each video is saved with its title, channel, description and thumbnail, a timestamped transcript, and it plays inside the site.</p>
+      </div>
+      <div class="field">
+        <label for="vfile">Video file for screenshots (optional)</label>
+        <input id="vfile" type="file" name="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v">
+        <p class="mute small" style="margin:8px 0 0">To capture graphs and slides, the scraper needs the video file itself. Attach it here (only with a single link), for videos your company owns or may use. {% if yt_download %}Downloads from YouTube are switched on, so without a file it will fetch the video itself.{% else %}Without a file you get the transcript but no screenshots.{% endif %}</p>
+      </div>
+      <button class="btn"><i class="ph ph-youtube-logo"></i> Save videos</button>
+    </form>
+  </div>
+
+  <aside class="now">
+    <h3>Already watching</h3>
+    <div class="stats">
+      <div class="stat"><div class="n" data-count="{{ n_src }}">{{ n_src }}</div><div class="l">websites</div></div>
+      <div class="stat"><div class="n" data-count="{{ n_top }}">{{ n_top }}</div><div class="l">topics</div></div>
+    </div>
+    {% if recent_src or recent_top %}
+    <h3>Added most recently</h3>
+    <div class="recent">
+      {% for s in recent_src %}<div>{{ s.url }}</div>{% endfor %}
+      {% for t in recent_top %}<div>{{ t.name }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    <h3>How it works</h3>
+    <ol class="how">
+      <li><b>Websites first.</b> Each one is opened and its latest articles collected.</li>
+      <li><b>Topics second.</b> Each topic is searched on the web.</li>
+      <li>One entry per line, or commas. The https:// part is optional.</li>
+      <li><b>Pasted posts</b> go straight into today's briefing.</li>
+      <li>Duplicates are skipped. Manage everything under <a href="{{ url_for('manage') }}">Sources</a>.</li>
+    </ol>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% set page = 'runs' %}
+{% block title %}History{% endblock %}
+{% block content %}
+<div class="head rise">
+  <div>
+    <h1 class="title">History</h1>
+    <p class="sub">Every scrape, scheduled (daily at 07:00) or started by hand.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="n" data-count="{{ n_runs }}">{{ n_runs }}</div><div class="l">runs</div></div>
+    <div class="stat"><div class="n" data-count="{{ total_added }}">{{ total_added }}</div><div class="l">articles</div></div>
+    <div class="stat"><div class="n">{{ ok_rate }}%</div><div class="l">clean finishes</div></div>
+  </div>
+</div>
+
+<section class="panel rise" style="--i:1">
+  <h2 style="margin-bottom:16px">Last 14 weeks</h2>
+  <div class="heatwrap">
+    <div class="heat" role="img" aria-label="Articles collected per day over the last 14 weeks">
+      {% for c in heat %}<i class="l{{ c.level }} {{ 'fut' if c.future }}" title="{{ c.day }}: {{ c.n }} articles"></i>{% endfor %}
+    </div>
+  </div>
+  <div class="legend">Fewer <i style="background:var(--raise);border:1px solid var(--line)"></i><i style="background:color-mix(in srgb, var(--accent) 28%, var(--surface))"></i><i style="background:color-mix(in srgb, var(--accent) 52%, var(--surface))"></i><i style="background:color-mix(in srgb, var(--accent) 76%, var(--surface))"></i><i style="background:var(--accent)"></i> More</div>
+</section>
+
+<h2 class="rise" style="--i:2; margin: 48px 0 8px">Runs</h2>
+{% if runs %}
+<table class="runs rise" style="--i:3">
+  <thead><tr><th>Started</th><th>New</th><th>Took</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+  {% for r in runs %}
+  <tr>
+    <td class="mono">{{ r.started.strftime('%a %d %b %Y, %H:%M') }}</td>
+    <td class="n">{{ r.added }}</td>
+    <td class="mono">{% if r.finished %}{{ ((r.finished - r.started).total_seconds() // 60)|int }}m {{ ((r.finished - r.started).total_seconds() % 60)|int }}s{% else %}{{ r.phase or 'starting' }}{% endif %}</td>
+    <td><span class="pill {{ {'done': 'ok', 'error': 'err', 'running': 'run'}.get(r.status, '') }}">{{ r.status }}</span></td>
+    <td class="mute small">{{ r.message }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty"><h2>No runs yet</h2><p>Press Run now to start the first scrape.</p></div>
+{% endif %}
+{% endblock %}

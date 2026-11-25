@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% set page = 'manage' %}
+{% block title %}Sources{% endblock %}
+
+{% macro act(kind, id, action, label, icon='', cls='btn ghost sm') %}
+<form method="post" action="/{{ kind }}/{{ id }}/{{ action }}"
+      {% if action == 'delete' %}onsubmit="return confirm('Delete this permanently? Articles already collected are kept.')"{% endif %}>
+  <input type="hidden" name="csrf" value="{{ csrf_token }}">
+  <button class="{{ cls }}" {% if icon %}title="{{ label }}" aria-label="{{ label }}"{% endif %}>{% if icon %}<i class="ph {{ icon }}"></i>{% else %}{{ label }}{% endif %}</button>
+</form>
+{% endmacro %}
+
+{% macro srccard(s, mode) %}
+<div class="src {{ 'dim' if mode == 'paused' }}">
+  <b>{{ s.url|host }}</b>
+  <span class="u">{{ s.url }}</span>
+  <div class="acts">
+    <span class="mono mute">{{ src_counts.get(s.url, 0) }} articles</span>
+    <span class="grow"></span>
+    {% if mode == 'paused' %}{{ act('sources', s.id, 'toggle', 'Resume') }}
+    {% else %}
+      {{ act('sources', s.id, 'priority', 'Make normal' if mode == 'pri' else 'Make priority') }}
+      {{ act('sources', s.id, 'toggle', 'Pause') }}
+    {% endif %}
+    {{ act('sources', s.id, 'delete', 'Delete', 'ph-trash', 'iconbtn danger') }}
+  </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+{% set pri = sources|selectattr('enabled')|selectattr('priority')|list %}
+{% set norm = sources|selectattr('enabled')|rejectattr('priority')|list %}
+{% set off = sources|rejectattr('enabled')|list %}
+{% set tact = topics|selectattr('enabled')|list %}
+{% set toff = topics|rejectattr('enabled')|list %}
+
+<div class="head rise">
+  <div>
+    <h1 class="title">Sources</h1>
+    <p class="sub">{{ sources|length }} websites and {{ topics|length }} topics, grouped by how they are scraped.</p>
+  </div>
+  <a class="btn" href="{{ url_for('add') }}"><i class="ph ph-plus-circle"></i> Add new scraper</a>
+</div>
+
+<div class="tiers rise" style="--i:1">
+  <section class="tier pri"><header><h3>Priority</h3><span>{{ pri|length }}</span></header>
+    <div class="body">{% for s in pri %}{{ srccard(s, 'pri') }}{% else %}<div class="none">Nothing here. Mark a website as priority and it is read first.</div>{% endfor %}</div></section>
+  <section class="tier"><header><h3>Normal</h3><span>{{ norm|length }}</span></header>
+    <div class="body">{% for s in norm %}{{ srccard(s, 'norm') }}{% else %}<div class="none">No normal websites.</div>{% endfor %}</div></section>
+  <section class="tier"><header><h3>Paused</h3><span>{{ off|length }}</span></header>
+    <div class="body">{% for s in off %}{{ srccard(s, 'paused') }}{% else %}<div class="none">Nothing is paused.</div>{% endfor %}</div></section>
+</div>
+
+<h2 class="rise" style="--i:2; margin-bottom:24px">Topics</h2>
+<div class="twocol rise" style="--i:3">
+  <section class="tier"><header><h3>Active</h3><span>{{ tact|length }}</span></header>
+    <div class="body">
+      {% for t in tact %}<div class="tl-row"><b>{{ t.name }}</b><span class="mono mute">{{ topic_counts.get(t.name, 0) }}</span>{{ act('topics', t.id, 'toggle', 'Pause') }}{{ act('topics', t.id, 'delete', 'Delete', 'ph-trash', 'iconbtn danger') }}</div>
+      {% else %}<div class="none">No active topics. <a href="{{ url_for('add') }}#pane-topics">Add some</a>.</div>{% endfor %}
+    </div></section>
+  <section class="tier"><header><h3>Paused</h3><span>{{ toff|length }}</span></header>
+    <div class="body">
+      {% for t in toff %}<div class="tl-row dim"><b>{{ t.name }}</b>{{ act('topics', t.id, 'toggle', 'Resume') }}{{ act('topics', t.id, 'delete', 'Delete', 'ph-trash', 'iconbtn danger') }}</div>
+      {% else %}<div class="none">Nothing is paused.</div>{% endfor %}
+    </div></section>
+</div>
+{% endblock %}
